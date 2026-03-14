@@ -20,7 +20,7 @@ const Pagos = () => {
     fecha_pago: new Date().toISOString().split('T')[0],
     fecha_vencimiento: '',
     metodo_pago: 'efectivo',
-    modalidad: 'mensual',
+    modalidad: '1_vez_semana',
     referencia: '',
     notas: ''
   });
@@ -31,21 +31,14 @@ const Pagos = () => {
 
   useEffect(() => {
     if (selectedEstudiante && selectedClase) {
-      loadInscripcion();
-    }
-  }, [selectedEstudiante, selectedClase]);
-
-  useEffect(() => {
-    if (selectedClase && formData.modalidad) {
-      const clase = clases.find(c => c.id == selectedClase);
-      if (clase) {
-        const monto = formData.modalidad === 'mensual' ? clase.precio_mensual : 
-                      formData.modalidad === 'quincenal' ? clase.precio_quincenal : 
-                      clase.precio_diario || 0;
-        setFormData(prev => ({...prev, monto}));
+      const inscripcion = inscripciones.find(
+        i => i.estudiante_id == selectedEstudiante && i.clase_id == selectedClase
+      );
+      if (inscripcion) {
+        setFormData(prev => ({ ...prev, inscripcion_id: inscripcion.id }));
       }
     }
-  }, [selectedClase, formData.modalidad, clases]);
+  }, [selectedEstudiante, selectedClase, inscripciones]);
 
   const loadData = async () => {
     try {
@@ -68,35 +61,15 @@ const Pagos = () => {
     }
   };
 
-  const loadInscripcion = async () => {
-    const inscripcion = inscripciones.find(
-      i => i.estudiante_id == selectedEstudiante && i.clase_id == selectedClase
-    );
-    
-    if (inscripcion) {
-      setFormData(prev => ({
-        ...prev,
-        inscripcion_id: inscripcion.id
-      }));
-    }
-  };
-
   const handleEstudianteChange = (e) => {
     setSelectedEstudiante(e.target.value);
-    setFormData({...formData, estudiante_id: e.target.value, inscripcion_id: '', monto: ''});
+    setFormData({...formData, estudiante_id: e.target.value, inscripcion_id: ''});
   };
 
   const handleClaseChange = (e) => {
     setSelectedClase(e.target.value);
-    setFormData({...formData, clase_id: e.target.value, inscripcion_id: '', monto: ''});
+    setFormData({...formData, clase_id: e.target.value, inscripcion_id: ''});
   };
-
-  const handleModalidadChange = (e) => {
-    const modalidad = e.target.value;
-    setFormData({...formData, modalidad});
-  };
-
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -120,7 +93,7 @@ const Pagos = () => {
       fecha_pago: new Date().toISOString().split('T')[0],
       fecha_vencimiento: '',
       metodo_pago: 'efectivo',
-      modalidad: 'mensual',
+      modalidad: '1_vez_semana',
       referencia: '',
       notas: ''
     });
@@ -215,18 +188,21 @@ const Pagos = () => {
 
               <div>
                 <label className="label">Modalidad de Pago *</label>
-                <select className="input-field" required value={formData.modalidad} onChange={handleModalidadChange}>
-                  <option value="mensual">Mensual</option>
-                  <option value="quincenal">Quincenal</option>
-                  <option value="diario">Diario</option>
+                <select className="input-field" required value={formData.modalidad}
+                  onChange={(e) => setFormData({...formData, modalidad: e.target.value})}>
+                  <option value="1_vez_semana">1 vez por semana</option>
+                  <option value="2_veces_semana">2 veces por semana</option>
+                  <option value="3_veces_semana">3 veces por semana</option>
                 </select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label">Monto</label>
-                  <input type="text" className="input-field bg-gray-100" readOnly
-                    value={formData.monto ? `$${parseFloat(formData.monto).toFixed(2)}` : ''} />
+                  <label className="label">Monto *</label>
+                  <input type="number" step="0.01" className="input-field" required
+                    placeholder="Ingrese el monto"
+                    value={formData.monto}
+                    onChange={(e) => setFormData({...formData, monto: e.target.value})} />
                 </div>
                 <div>
                   <label className="label">Método de Pago *</label>

@@ -6,8 +6,8 @@ export const getInscripciones = async (req, res) => {
       SELECT i.*, 
         e.nombre || ' ' || e.apellido as estudiante_nombre,
         c.nombre as clase_nombre,
-        c.precio_mensual,
-        c.precio_quincenal
+        c.precio,
+        c.frecuencia_semanal
       FROM inscripciones i
       JOIN estudiantes e ON i.estudiante_id = e.id
       JOIN clases c ON i.clase_id = c.id

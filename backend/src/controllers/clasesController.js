@@ -17,15 +17,13 @@ export const getClases = async (req, res) => {
 
 export const createClase = async (req, res) => {
   try {
-    const { nombre, descripcion, profesor_id, precio_mensual, precio_quincenal, precio_diario, capacidad_maxima, horarios } = req.body;
-    
-    // Si horarios es undefined o null, usar array vacío
+    const { nombre, descripcion, profesor_id, precio, frecuencia_semanal, capacidad_maxima, horarios } = req.body;
     const horariosData = horarios && horarios.length > 0 ? horarios : [];
     
     const result = await query(
-      `INSERT INTO clases (nombre, descripcion, profesor_id, precio_mensual, precio_quincenal, precio_diario, capacidad_maxima, horarios)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [nombre, descripcion, profesor_id, precio_mensual, precio_quincenal, precio_diario || null, capacidad_maxima, JSON.stringify(horariosData)]
+      `INSERT INTO clases (nombre, descripcion, profesor_id, precio, frecuencia_semanal, capacidad_maxima, horarios)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [nombre, descripcion, profesor_id, precio, frecuencia_semanal || 1, capacidad_maxima, JSON.stringify(horariosData)]
     );
 
     res.status(201).json(result.rows[0]);
@@ -38,13 +36,13 @@ export const createClase = async (req, res) => {
 export const updateClase = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, descripcion, profesor_id, precio_mensual, precio_quincenal, capacidad_maxima, horarios } = req.body;
+    const { nombre, descripcion, profesor_id, precio, frecuencia_semanal, capacidad_maxima, horarios } = req.body;
 
     const result = await query(
-      `UPDATE clases SET nombre = $2, descripcion = $3, profesor_id = $4, precio_mensual = $5, 
-       precio_quincenal = $6, capacidad_maxima = $7, horarios = $8, updated_at = CURRENT_TIMESTAMP 
+      `UPDATE clases SET nombre = $2, descripcion = $3, profesor_id = $4, precio = $5, 
+       frecuencia_semanal = $6, capacidad_maxima = $7, horarios = $8, updated_at = CURRENT_TIMESTAMP 
        WHERE id = $1 RETURNING *`,
-      [id, nombre, descripcion, profesor_id, precio_mensual, precio_quincenal, capacidad_maxima, JSON.stringify(horarios)]
+      [id, nombre, descripcion, profesor_id, precio, frecuencia_semanal || 1, capacidad_maxima, JSON.stringify(horarios)]
     );
 
     res.json(result.rows[0]);

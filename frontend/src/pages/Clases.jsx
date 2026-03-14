@@ -1,14 +1,21 @@
 import { useState, useEffect } from 'react';
 import { clasesAPI, profesoresAPI } from '../services/api';
-import { Plus, Edit, Trash2, Clock } from 'lucide-react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
+
+const FRECUENCIAS = {
+  1: '1 vez por semana',
+  2: '2 veces por semana',
+  3: '3 veces por semana'
+};
 
 const Clases = () => {
   const [clases, setClases] = useState([]);
   const [profesores, setProfesores] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    nombre: '', descripcion: '', profesor_id: '', precio_mensual: '',
-    precio_quincenal: '', precio_diario: '', capacidad_maxima: '', horarios: []
+    nombre: '', descripcion: '', profesor_id: '', precio: '',
+    frecuencia_semanal: '1', capacidad_maxima: '', horarios: []
   });
 
   useEffect(() => {
@@ -34,27 +41,51 @@ const Clases = () => {
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      nombre: '', descripcion: '', profesor_id: '', precio: '',
+      frecuencia_semanal: '1', capacidad_maxima: '', horarios: []
+    });
+    setIsEditing(false);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Preparar datos, convertir campos vacíos a null
       const dataToSend = {
         ...formData,
         capacidad_maxima: formData.capacidad_maxima ? parseInt(formData.capacidad_maxima) : null,
+        frecuencia_semanal: parseInt(formData.frecuencia_semanal),
         horarios: formData.horarios.length > 0 ? formData.horarios : []
       };
       
-      await clasesAPI.create(dataToSend);
+      if (isEditing) {
+        await clasesAPI.update(formData.id, dataToSend);
+      } else {
+        await clasesAPI.create(dataToSend);
+      }
       setShowModal(false);
       loadClases();
-      setFormData({
-        nombre: '', descripcion: '', profesor_id: '', precio_mensual: '',
-        precio_quincenal: '', capacidad_maxima: '', horarios: []
-      });
+      resetForm();
     } catch (error) {
       console.error('Error:', error);
-      alert('Error al crear clase: ' + (error.response?.data?.error || error.message));
+      alert('Error: ' + (error.response?.data?.error || error.message));
     }
+  };
+
+  const handleEdit = (clase) => {
+    setFormData({
+      id: clase.id,
+      nombre: clase.nombre,
+      descripcion: clase.descripcion || '',
+      profesor_id: clase.profesor_id || '',
+      precio: clase.precio,
+      frecuencia_semanal: String(clase.frecuencia_semanal || 1),
+      capacidad_maxima: clase.capacidad_maxima || '',
+      horarios: clase.horarios || []
+    });
+    setIsEditing(true);
+    setShowModal(true);
   };
 
   const handleDelete = async (id) => {
@@ -72,7 +103,7 @@ const Clases = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-primary">Clases</h1>
-        <button onClick={() => setShowModal(true)} className="btn-primary flex items-center space-x-2">
+        <button onClick={() => { resetForm(); setShowModal(true); }} className="btn-primary flex items-center space-x-2">
           <Plus size={20} />
           <span>Nueva Clase</span>
         </button>
@@ -87,7 +118,7 @@ const Clases = () => {
                 <p className="text-sm text-gray-600">{clase.profesor_nombre}</p>
               </div>
               <div className="flex space-x-2">
-                <button className="text-blue-600 hover:text-blue-800">
+                <button onClick={() => handleEdit(clase)} className="text-blue-600 hover:text-blue-800">
                   <Edit size={18} />
                 </button>
                 <button onClick={() => handleDelete(clase.id)} className="text-red-600 hover:text-red-800">
@@ -98,12 +129,12 @@ const Clases = () => {
             <p className="text-sm text-gray-700 mb-3">{clase.descripcion}</p>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="font-semibold">Mensual:</span>
-                <span className="text-gold font-bold">${clase.precio_mensual}</span>
+                <span className="font-semibold">Precio:</span>
+                <span className="text-gold font-bold">${clase.precio}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="font-semibold">Quincenal:</span>
-                <span className="text-gold font-bold">${clase.precio_quincenal}</span>
+                <span className="font-semibold">Frecuencia:</span>
+                <span>{FRECUENCIAS[clase.frecuencia_semanal] || clase.frecuencia_semanal}</span>
               </div>
             </div>
           </div>
@@ -113,7 +144,7 @@ const Clases = () => {
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl p-6 max-w-lg w-full">
-            <h2 className="text-2xl font-bold text-primary mb-4">Nueva Clase</h2>
+            <h2 className="text-2xl font-bold text-primary mb-4">{isEditing ? 'Editar Clase' : 'Nueva Clase'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="label">Nombre *</label>
@@ -138,30 +169,28 @@ const Clases = () => {
                   ))}
                 </select>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label">Precio Mensual *</label>
+                  <label className="label">Precio *</label>
                   <input type="number" step="0.01" className="input-field" required
-                    value={formData.precio_mensual}
-                    onChange={(e) => setFormData({...formData, precio_mensual: e.target.value})} />
+                    value={formData.precio}
+                    onChange={(e) => setFormData({...formData, precio: e.target.value})} />
                 </div>
                 <div>
-                  <label className="label">Precio Quincenal *</label>
-                  <input type="number" step="0.01" className="input-field" required
-                    value={formData.precio_quincenal}
-                    onChange={(e) => setFormData({...formData, precio_quincenal: e.target.value})} />
-                </div>
-                <div>
-                  <label className="label">Precio Diario</label>
-                  <input type="number" step="0.01" className="input-field"
-                    value={formData.precio_diario}
-                    onChange={(e) => setFormData({...formData, precio_diario: e.target.value})} />
+                  <label className="label">Frecuencia Semanal *</label>
+                  <select className="input-field" required
+                    value={formData.frecuencia_semanal}
+                    onChange={(e) => setFormData({...formData, frecuencia_semanal: e.target.value})}>
+                    <option value="1">1 vez por semana</option>
+                    <option value="2">2 veces por semana</option>
+                    <option value="3">3 veces por semana</option>
+                  </select>
                 </div>
               </div>
 
               <div className="flex space-x-3 pt-4">
                 <button type="submit" className="btn-primary flex-1">Guardar</button>
-                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary flex-1">
+                <button type="button" onClick={() => { setShowModal(false); resetForm(); }} className="btn-secondary flex-1">
                   Cancelar
                 </button>
               </div>
