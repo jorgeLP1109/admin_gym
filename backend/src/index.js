@@ -36,6 +36,32 @@ app.get('/', (req, res) => {
   res.json({ message: 'LEVEL UP S&A CENTER API' });
 });
 
+// Endpoint de diagnóstico
+app.get('/api/health', async (req, res) => {
+  try {
+    const { query } = await import('./config/database.js');
+    const result = await query('SELECT NOW() as time, current_database() as db');
+    res.json({
+      status: 'ok',
+      database: result.rows[0],
+      env: {
+        node_env: process.env.NODE_ENV,
+        has_db_url: !!process.env.DATABASE_URL,
+        has_jwt_secret: !!process.env.JWT_SECRET
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      error: error.message,
+      env: {
+        node_env: process.env.NODE_ENV,
+        has_db_url: !!process.env.DATABASE_URL
+      }
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
 });

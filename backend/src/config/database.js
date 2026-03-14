@@ -10,6 +10,14 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
+pool.on('error', (err) => {
+  console.error('Error inesperado en pool de BD:', err.message);
+});
+
+pool.query('SELECT NOW()')
+  .then(() => console.log('✅ Conexión a base de datos exitosa'))
+  .catch((err) => console.error('❌ Error conectando a BD:', err.message));
+
 export const query = (text, params) => pool.query(text, params);
 
 export default pool;
