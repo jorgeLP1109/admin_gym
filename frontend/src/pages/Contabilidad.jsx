@@ -99,6 +99,7 @@ const Contabilidad = () => {
                 <th className="px-4 py-3 text-left text-sm font-semibold">Tipo</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">Categoría</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">Concepto</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Persona</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">Monto</th>
               </tr>
             </thead>
@@ -115,8 +116,9 @@ const Contabilidad = () => {
                   </td>
                   <td className="px-4 py-3">{t.categoria}</td>
                   <td className="px-4 py-3">{t.concepto}</td>
+                  <td className="px-4 py-3 text-sm">{t.persona_nombre || t.tercero_nombre || '-'}</td>
                   <td className={`px-4 py-3 font-bold ${t.tipo === 'ingreso' ? 'text-green-600' : 'text-red-600'}`}>
-                    ${t.monto}
+                    ${Number(t.monto || 0).toLocaleString()}
                   </td>
                 </tr>
               ))}

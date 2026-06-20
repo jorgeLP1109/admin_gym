@@ -5,24 +5,14 @@ export const getTransacciones = async (req, res) => {
     const { fecha_inicio, fecha_fin, tipo } = req.query;
     
     let sql = `
-      SELECT t.*, 
-        CASE 
-          WHEN t.pago_id IS NOT NULL THEN 
-            e.nombre || ' ' || e.apellido
-          ELSE NULL
-        END as estudiante_nombre,
-        CASE 
-          WHEN t.pago_id IS NOT NULL THEN e.identificacion
-          ELSE NULL
-        END as estudiante_identificacion,
-        CASE 
-          WHEN t.pago_id IS NOT NULL THEN e.telefono
-          ELSE NULL
-        END as estudiante_telefono,
-        CASE 
-          WHEN t.pago_id IS NOT NULL THEN e.direccion
-          ELSE NULL
-        END as estudiante_direccion
+      SELECT t.*,
+        COALESCE(
+          CASE WHEN t.pago_id IS NOT NULL THEN e.nombre || ' ' || e.apellido ELSE NULL END,
+          t.tercero_nombre
+        ) as persona_nombre,
+        CASE WHEN t.pago_id IS NOT NULL THEN e.identificacion ELSE t.tercero_identificacion END as persona_identificacion,
+        CASE WHEN t.pago_id IS NOT NULL THEN e.telefono ELSE t.tercero_telefono END as persona_telefono,
+        CASE WHEN t.pago_id IS NOT NULL THEN e.direccion ELSE t.tercero_direccion END as persona_direccion
       FROM transacciones_contables t
       LEFT JOIN pagos p ON t.pago_id = p.id
       LEFT JOIN inscripciones i ON p.inscripcion_id = i.id
@@ -35,12 +25,10 @@ export const getTransacciones = async (req, res) => {
       params.push(fecha_inicio);
       sql += ` AND t.fecha >= $${params.length}`;
     }
-    
     if (fecha_fin) {
       params.push(fecha_fin);
       sql += ` AND t.fecha <= $${params.length}`;
     }
-    
     if (tipo) {
       params.push(tipo);
       sql += ` AND t.tipo = $${params.length}`;
@@ -85,9 +73,9 @@ export const getResumenContable = async (req, res) => {
     
     const result = await query(`
       SELECT 
-        SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as total_ingresos,
-        SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as total_gastos,
-        SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) as balance
+        COALESCE(SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END), 0) as total_ingresos,
+        COALESCE(SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END), 0) as total_gastos,
+        COALESCE(SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END), 0) as balance
       FROM transacciones_contables
       ${whereClause}
     `, params);
@@ -102,10 +90,9 @@ export const deleteTransaccion = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Verificar que no esté vinculada a un pago
-    const check = await query('SELECT pago_id FROM transacciones_contables WHERE id = $1', [id]);
+    const check = await query('SELECT pago_id, referencia FROM transacciones_contables WHERE id = $1', [id]);
     if (check.rows[0]?.pago_id) {
-      return res.status(400).json({ error: 'No se puede eliminar una transacción vinculada a un pago' });
+      return res.status(400).json({ error: 'No se puede eliminar una transacción vinculada a un pago registrado' });
     }
     
     await query('DELETE FROM transacciones_contables WHERE id = $1', [id]);
