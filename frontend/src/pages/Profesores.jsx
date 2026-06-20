@@ -23,15 +23,41 @@ const Profesores = () => {
     }
   };
 
+  const [isEditing, setIsEditing] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await profesoresAPI.create(formData);
+      if (isEditing) {
+        await profesoresAPI.update(formData.id, formData);
+      } else {
+        await profesoresAPI.create(formData);
+      }
       setShowModal(false);
       loadProfesores();
+      resetForm();
     } catch (error) {
       console.error('Error:', error);
     }
+  };
+
+  const handleEdit = (profesor) => {
+    setFormData({
+      id: profesor.id,
+      nombre: profesor.nombre || '',
+      apellido: profesor.apellido || '',
+      identificacion: profesor.identificacion || '',
+      telefono: profesor.telefono || '',
+      email: profesor.email || '',
+      especialidad: profesor.especialidad || ''
+    });
+    setIsEditing(true);
+    setShowModal(true);
+  };
+
+  const resetForm = () => {
+    setFormData({ nombre: '', apellido: '', identificacion: '', telefono: '', email: '', especialidad: '' });
+    setIsEditing(false);
   };
 
   const handleDelete = async (id) => {
@@ -49,7 +75,7 @@ const Profesores = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-primary">Profesores</h1>
-        <button onClick={() => setShowModal(true)} className="btn-primary flex items-center space-x-2">
+        <button onClick={() => { resetForm(); setShowModal(true); }} className="btn-primary flex items-center space-x-2">
           <Plus size={20} />
           <span>Nuevo Profesor</span>
         </button>
@@ -66,7 +92,7 @@ const Profesores = () => {
                 <p className="text-sm text-gold font-semibold">{profesor.especialidad}</p>
               </div>
               <div className="flex space-x-2">
-                <button className="text-blue-600 hover:text-blue-800">
+                <button onClick={() => handleEdit(profesor)} className="text-blue-600 hover:text-blue-800">
                   <Edit size={18} />
                 </button>
                 <button onClick={() => handleDelete(profesor.id)} className="text-red-600 hover:text-red-800">
@@ -86,7 +112,7 @@ const Profesores = () => {
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl p-6 max-w-lg w-full">
-            <h2 className="text-2xl font-bold text-primary mb-4">Nuevo Profesor</h2>
+            <h2 className="text-2xl font-bold text-primary mb-4">{isEditing ? 'Editar Profesor' : 'Nuevo Profesor'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -129,7 +155,7 @@ const Profesores = () => {
 
               <div className="flex space-x-3 pt-4">
                 <button type="submit" className="btn-primary flex-1">Guardar</button>
-                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary flex-1">
+                <button type="button" onClick={() => { setShowModal(false); resetForm(); }} className="btn-secondary flex-1">
                   Cancelar
                 </button>
               </div>
