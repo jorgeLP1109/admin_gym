@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, Users, GraduationCap, Calendar, DollarSign, BarChart3, ClipboardCheck, FileText, UserPlus } from 'lucide-react';
+import { LogOut, Users, GraduationCap, Calendar, DollarSign, BarChart3, ClipboardCheck, FileText, UserPlus, Zap } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -54,6 +54,10 @@ const Navbar = () => {
             <Link to="/contabilidad" className="flex items-center space-x-2 hover:text-gold transition">
               <BarChart3 size={20} />
               <span>Contabilidad</span>
+            </Link>
+            <Link to="/levelup" className="flex items-center space-x-2 hover:text-gold transition">
+              <Zap size={20} />
+              <span>Level Up</span>
             </Link>
             
             <div className="flex items-center space-x-3 ml-6 pl-6 border-l border-blue-700">

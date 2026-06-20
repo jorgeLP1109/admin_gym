@@ -11,6 +11,7 @@ import Pagos from './pages/Pagos';
 import Contabilidad from './pages/Contabilidad';
 import Asistencias from './pages/Asistencias';
 import Reportes from './pages/Reportes';
+import LevelUpSync from './pages/LevelUpSync';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -97,6 +98,14 @@ const AppRoutes = () => {
           <>
             <Navbar />
             <Reportes />
+          </>
+        </PrivateRoute>
+      } />
+      <Route path="/levelup" element={
+        <PrivateRoute>
+          <>
+            <Navbar />
+            <LevelUpSync />
           </>
         </PrivateRoute>
       } />

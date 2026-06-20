@@ -84,4 +84,11 @@ export const asistenciasAPI = {
   getReporte: (params) => api.get('/asistencias/reporte', { params })
 };
 
+export const levelupAPI = {
+  getUsers: () => api.get('/levelup/users'),
+  getClasses: () => api.get('/levelup/classes'),
+  getTransacciones: () => api.get('/levelup/transacciones'),
+  registrarPagoManual: (data) => api.post('/levelup/pago-manual', data)
+};
+
 export default api;
