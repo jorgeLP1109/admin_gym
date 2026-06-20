@@ -7,7 +7,9 @@ export const getInscripciones = async (req, res) => {
         e.nombre || ' ' || e.apellido as estudiante_nombre,
         c.nombre as clase_nombre,
         c.precio,
-        c.frecuencia_semanal
+        c.frecuencia_semanal,
+        c.horarios,
+        (SELECT MAX(p.fecha_vencimiento) FROM pagos p WHERE p.inscripcion_id = i.id) as ultima_fecha_vencimiento
       FROM inscripciones i
       JOIN estudiantes e ON i.estudiante_id = e.id
       JOIN clases c ON i.clase_id = c.id
@@ -24,7 +26,8 @@ export const getInscripcionesByEstudiante = async (req, res) => {
   try {
     const { estudiante_id } = req.params;
     const result = await query(`
-      SELECT i.*, c.nombre as clase_nombre, c.horarios
+      SELECT i.*, c.nombre as clase_nombre, c.horarios, c.precio,
+        (SELECT MAX(p.fecha_vencimiento) FROM pagos p WHERE p.inscripcion_id = i.id) as ultima_fecha_vencimiento
       FROM inscripciones i
       JOIN clases c ON i.clase_id = c.id
       WHERE i.estudiante_id = $1 AND i.activo = true
@@ -42,7 +45,7 @@ export const createInscripcion = async (req, res) => {
     const result = await query(
       `INSERT INTO inscripciones (estudiante_id, clase_id, modalidad_pago, dia_pago, dia_pago_secundario)
        VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [estudiante_id, clase_id, modalidad_pago, dia_pago, dia_pago_secundario || null]
+      [estudiante_id, clase_id, modalidad_pago || 'mensual', dia_pago, dia_pago_secundario || null]
     );
 
     res.status(201).json(result.rows[0]);
