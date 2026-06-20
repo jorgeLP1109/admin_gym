@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
 import { levelupAPI } from '../services/api';
-import { RefreshCw, DollarSign, Users, CheckCircle, XCircle } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 
 const LevelUpSync = () => {
   const [activeTab, setActiveTab] = useState('transacciones');
   const [transacciones, setTransacciones] = useState([]);
+  const [syncCount, setSyncCount] = useState(null);
   const [users, setUsers] = useState([]);
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [showPagoModal, setShowPagoModal] = useState(false);
   const [pagoForm, setPagoForm] = useState({
-    userId: '', classId: '', monto: '', metodo_pago: 'efectivo', referencia: '', notas: '', alumno_nombre: ''
+    userId: '', classId: '', monto: '', metodo_pago: 'efectivo',
+    referencia: '', notas: '', alumno_nombre: '', clase_nombre: ''
   });
 
   useEffect(() => {
@@ -36,23 +37,15 @@ const LevelUpSync = () => {
     setLoading(true);
     try {
       const res = await levelupAPI.getTransacciones();
-      setTransacciones(res.data || []);
+      setTransacciones(res.data.transacciones || []);
+      setSyncCount(res.data.sincronizadas || 0);
+      if (res.data.sincronizadas > 0) {
+        alert(`✅ ${res.data.sincronizadas} transacciones nuevas registradas en contabilidad`);
+      }
     } catch (error) {
       alert('Error al sincronizar transacciones');
     }
     setLoading(false);
-  };
-
-  const handlePagoManual = async (e) => {
-    e.preventDefault();
-    try {
-      await levelupAPI.registrarPagoManual(pagoForm);
-      alert('✅ Pago registrado y solvencia actualizada en Level Up');
-      setShowPagoModal(false);
-      setPagoForm({ userId: '', classId: '', monto: '', metodo_pago: 'efectivo', referencia: '', notas: '', alumno_nombre: '' });
-    } catch (error) {
-      alert('Error: ' + (error.response?.data?.error || error.message));
-    }
   };
 
   const handleUserSelect = (e) => {
@@ -62,7 +55,18 @@ const LevelUpSync = () => {
 
   const handleClassSelect = (e) => {
     const clase = classes.find(c => c._id === e.target.value);
-    setPagoForm({ ...pagoForm, classId: e.target.value, monto: clase?.precio || '' });
+    setPagoForm({ ...pagoForm, classId: e.target.value, monto: clase?.precio || '', clase_nombre: clase?.nombre || '' });
+  };
+
+  const handlePagoManual = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await levelupAPI.registrarPagoManual(pagoForm);
+      alert(`✅ ${res.data.message}\nVencimiento: ${new Date(res.data.fechaVencimiento).toLocaleDateString()}`);
+      setPagoForm({ userId: '', classId: '', monto: '', metodo_pago: 'efectivo', referencia: '', notas: '', alumno_nombre: '', clase_nombre: '' });
+    } catch (error) {
+      alert('Error: ' + (error.response?.data?.error || error.message));
+    }
   };
 
   return (
@@ -87,7 +91,12 @@ const LevelUpSync = () => {
       {activeTab === 'transacciones' && (
         <div className="card">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Transacciones Wompi (App)</h2>
+            <div>
+              <h2 className="text-xl font-bold">Transacciones Wompi (App)</h2>
+              {syncCount !== null && (
+                <p className="text-sm text-green-600">{syncCount} nuevas registradas en contabilidad</p>
+              )}
+            </div>
             <button onClick={syncTransacciones} disabled={loading}
               className="btn-primary flex items-center space-x-2">
               <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
@@ -124,7 +133,7 @@ const LevelUpSync = () => {
               </tbody>
             </table>
             {transacciones.length === 0 && (
-              <p className="text-center text-gray-500 py-8">Click "Sincronizar" para cargar transacciones</p>
+              <p className="text-center text-gray-500 py-8">Click "Sincronizar" para cargar y registrar transacciones en contabilidad</p>
             )}
           </div>
         </div>
@@ -132,8 +141,8 @@ const LevelUpSync = () => {
 
       {activeTab === 'pago-manual' && (
         <div className="card max-w-2xl">
-          <h2 className="text-xl font-bold mb-4">Registrar Pago Manual</h2>
-          <p className="text-sm text-gray-600 mb-4">Registra pagos en efectivo/transferencia y actualiza solvencia en Level Up automáticamente.</p>
+          <h2 className="text-xl font-bold mb-2">Registrar Pago Manual</h2>
+          <p className="text-sm text-gray-600 mb-4">Registra pagos en efectivo/transferencia. Se actualizará automáticamente la solvencia en Level Up y se registrará en contabilidad.</p>
           <form onSubmit={handlePagoManual} className="space-y-4">
             <div>
               <label className="label">Alumno (Level Up) *</label>
@@ -184,7 +193,7 @@ const LevelUpSync = () => {
                 onChange={(e) => setPagoForm({ ...pagoForm, notas: e.target.value })} />
             </div>
             <button type="submit" className="btn-primary w-full">
-              Registrar Pago y Actualizar Solvencia
+              Registrar Pago y Actualizar Solvencia en Level Up
             </button>
           </form>
         </div>
