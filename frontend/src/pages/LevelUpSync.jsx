@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { levelupAPI } from '../services/api';
-import { RefreshCw, CheckCircle, XCircle } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, Download } from 'lucide-react';
 
 const LevelUpSync = () => {
   const [activeTab, setActiveTab] = useState('transacciones');
@@ -48,6 +48,17 @@ const LevelUpSync = () => {
     setLoading(false);
   };
 
+  const handleImportarEstudiantes = async () => {
+    setLoading(true);
+    try {
+      const res = await levelupAPI.importarEstudiantes();
+      alert(`✅ ${res.data.message}`);
+    } catch (error) {
+      alert('Error: ' + (error.response?.data?.error || error.message));
+    }
+    setLoading(false);
+  };
+
   const handleUserSelect = (e) => {
     const user = users.find(u => u._id === e.target.value);
     setPagoForm({ ...pagoForm, userId: e.target.value, alumno_nombre: user?.nombre || '' });
@@ -81,6 +92,10 @@ const LevelUpSync = () => {
         <button onClick={() => setActiveTab('pago-manual')}
           className={`px-4 py-2 rounded-lg font-semibold ${activeTab === 'pago-manual' ? 'bg-primary text-white' : 'bg-gray-200'}`}>
           Pago Manual
+        </button>
+        <button onClick={() => setActiveTab('importar')}
+          className={`px-4 py-2 rounded-lg font-semibold ${activeTab === 'importar' ? 'bg-primary text-white' : 'bg-gray-200'}`}>
+          Importar Estudiantes
         </button>
         <button onClick={() => setActiveTab('solvencia')}
           className={`px-4 py-2 rounded-lg font-semibold ${activeTab === 'solvencia' ? 'bg-primary text-white' : 'bg-gray-200'}`}>
@@ -196,6 +211,32 @@ const LevelUpSync = () => {
               Registrar Pago y Actualizar Solvencia en Level Up
             </button>
           </form>
+        </div>
+      )}
+
+      {activeTab === 'importar' && (
+        <div className="card max-w-2xl">
+          <h2 className="text-xl font-bold mb-2">Importar Estudiantes desde Level Up</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Importa los alumnos registrados en la app de Level Up a la base de datos local.
+            Los que ya existen (por email) se omiten.
+          </p>
+          <button onClick={handleImportarEstudiantes} disabled={loading}
+            className="btn-primary flex items-center space-x-2">
+            <Download size={18} className={loading ? 'animate-spin' : ''} />
+            <span>Importar Estudiantes</span>
+          </button>
+          <div className="mt-4">
+            <h3 className="font-semibold mb-2">Estudiantes en Level Up ({users.length})</h3>
+            <div className="max-h-60 overflow-y-auto border rounded-lg">
+              {users.map(u => (
+                <div key={u._id} className="px-3 py-2 border-b text-sm">
+                  <span className="font-medium">{u.nombre}</span>
+                  <span className="text-gray-500 ml-2">{u.email}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 

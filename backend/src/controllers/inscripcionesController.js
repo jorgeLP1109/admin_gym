@@ -42,18 +42,28 @@ export const createInscripcion = async (req, res) => {
   try {
     const { estudiante_id, clase_id, modalidad_pago, dia_pago, dia_pago_secundario } = req.body;
     
+    // Usar modalidad compatible con el constraint de la BD
+    const modalidad = modalidad_pago || 'mensual';
+    
     const result = await query(
       `INSERT INTO inscripciones (estudiante_id, clase_id, modalidad_pago, dia_pago, dia_pago_secundario)
        VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [estudiante_id, clase_id, modalidad_pago || 'mensual', dia_pago, dia_pago_secundario || null]
+      [estudiante_id, clase_id, modalidad, dia_pago || 1, dia_pago_secundario || null]
     );
 
     res.status(201).json(result.rows[0]);
   } catch (error) {
+    console.error('Error inscripcion:', error.message, error.detail);
     if (error.code === '23505') {
       return res.status(400).json({ error: 'El estudiante ya está inscrito en esta clase' });
     }
-    res.status(500).json({ error: 'Error al crear inscripción' });
+    if (error.code === '23503') {
+      return res.status(400).json({ error: 'El estudiante o la clase no existen' });
+    }
+    if (error.code === '23514') {
+      return res.status(400).json({ error: 'Modalidad de pago no válida. Use: mensual, quincenal o diario' });
+    }
+    res.status(500).json({ error: 'Error al crear inscripción: ' + error.message });
   }
 };
 

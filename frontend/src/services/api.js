@@ -88,7 +88,8 @@ export const levelupAPI = {
   getUsers: () => api.get('/levelup/users'),
   getClasses: () => api.get('/levelup/classes'),
   getTransacciones: () => api.get('/levelup/transacciones'),
-  registrarPagoManual: (data) => api.post('/levelup/pago-manual', data)
+  registrarPagoManual: (data) => api.post('/levelup/pago-manual', data),
+  importarEstudiantes: () => api.post('/levelup/importar-estudiantes')
 };
 
 export default api;

@@ -57,6 +57,47 @@ export const syncTransacciones = async (req, res) => {
   }
 };
 
+// Importar estudiantes desde Level Up a la BD local
+export const importarEstudiantes = async (req, res) => {
+  try {
+    const users = await levelup.getUsers();
+    let importados = 0;
+    let existentes = 0;
+
+    for (const user of users) {
+      if (!user.nombre) continue;
+
+      // Separar nombre y apellido
+      const partes = user.nombre.trim().split(' ');
+      const nombre = partes[0] || user.nombre;
+      const apellido = partes.slice(1).join(' ') || '';
+
+      // Verificar si ya existe por email
+      const existe = await query(
+        'SELECT id FROM estudiantes WHERE email = $1',
+        [user.email]
+      );
+
+      if (existe.rows.length > 0) {
+        existentes++;
+        continue;
+      }
+
+      await query(
+        `INSERT INTO estudiantes (nombre, apellido, email, telefono, identificacion)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [nombre, apellido, user.email || '', user.telefono || '', user.identificacion || user.email || '']
+      );
+      importados++;
+    }
+
+    res.json({ message: `${importados} estudiantes importados, ${existentes} ya existían`, importados, existentes });
+  } catch (error) {
+    console.error('Error importar:', error.message);
+    res.status(500).json({ error: 'Error al importar estudiantes: ' + error.message });
+  }
+};
+
 // Registrar pago manual y sincronizar con Level Up
 export const registrarPagoManual = async (req, res) => {
   try {
