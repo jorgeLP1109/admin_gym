@@ -42,9 +42,27 @@ export const createInscripcion = async (req, res) => {
   try {
     const { estudiante_id, clase_id, modalidad_pago, dia_pago, dia_pago_secundario } = req.body;
     
-    // Usar modalidad compatible con el constraint de la BD
     const modalidad = modalidad_pago || 'mensual';
-    
+
+    // Verificar si ya existe una inscripción inactiva y reactivarla
+    const existente = await query(
+      'SELECT id, activo FROM inscripciones WHERE estudiante_id = $1 AND clase_id = $2',
+      [estudiante_id, clase_id]
+    );
+
+    if (existente.rows.length > 0) {
+      if (existente.rows[0].activo) {
+        return res.status(400).json({ error: 'El estudiante ya está inscrito en esta clase' });
+      }
+      // Reactivar inscripción
+      const result = await query(
+        `UPDATE inscripciones SET activo = true, modalidad_pago = $1, dia_pago = $2, dia_pago_secundario = $3, fecha_inscripcion = CURRENT_TIMESTAMP
+         WHERE id = $4 RETURNING *`,
+        [modalidad, dia_pago || 1, dia_pago_secundario || null, existente.rows[0].id]
+      );
+      return res.status(201).json(result.rows[0]);
+    }
+
     const result = await query(
       `INSERT INTO inscripciones (estudiante_id, clase_id, modalidad_pago, dia_pago, dia_pago_secundario)
        VALUES ($1, $2, $3, $4, $5) RETURNING *`,
