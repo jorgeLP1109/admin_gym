@@ -92,4 +92,12 @@ export const levelupAPI = {
   importarEstudiantes: () => api.post('/levelup/importar-estudiantes')
 };
 
+export const cortesiaAPI = {
+  getAll: () => api.get('/cortesia'),
+  create: (data) => api.post('/cortesia', data),
+  convertir: (id) => api.post(`/cortesia/${id}/convertir`),
+  delete: (id) => api.delete(`/cortesia/${id}`),
+  getEstadisticas: () => api.get('/cortesia/estadisticas')
+};
+
 export default api;

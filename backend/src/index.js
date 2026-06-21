@@ -11,6 +11,7 @@ import pagosRoutes from './routes/pagos.js';
 import contabilidadRoutes from './routes/contabilidad.js';
 import asistenciasRoutes from './routes/asistencias.js';
 import levelupRoutes from './routes/levelup.js';
+import cortesiaRoutes from './routes/cortesia.js';
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use('/api/pagos', pagosRoutes);
 app.use('/api/contabilidad', contabilidadRoutes);
 app.use('/api/asistencias', asistenciasRoutes);
 app.use('/api/levelup', levelupRoutes);
+app.use('/api/cortesia', cortesiaRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'LEVEL UP S&A CENTER API' });
