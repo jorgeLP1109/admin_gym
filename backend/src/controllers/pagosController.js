@@ -101,13 +101,15 @@ export const getEstudiantesMorosos = async (req, res) => {
     const result = await query(`
       SELECT DISTINCT e.id, e.nombre, e.apellido, e.telefono,
         MAX(p.fecha_vencimiento) as ultima_fecha_vencimiento,
-        CURRENT_DATE - MAX(p.fecha_vencimiento) as dias_mora
+        CASE 
+          WHEN MAX(p.fecha_vencimiento) IS NULL THEN NULL
+          ELSE CURRENT_DATE - MAX(p.fecha_vencimiento)
+        END as dias_mora
       FROM estudiantes e
       JOIN inscripciones i ON e.id = i.estudiante_id
       LEFT JOIN pagos p ON i.id = p.inscripcion_id
       WHERE i.activo = true 
         AND e.activo = true
-        AND (p.fecha_vencimiento < CURRENT_DATE OR p.id IS NULL)
         AND e.id NOT IN (
           SELECT DISTINCT i2.estudiante_id FROM inscripciones i2
           JOIN pagos p2 ON i2.id = p2.inscripcion_id
